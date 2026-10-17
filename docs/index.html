@@ -1,0 +1,943 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shield OIDC documentation</title>
+<meta name="description" content="Single sign-on for CodeIgniter Shield with Microsoft Entra ID, Okta, Google Workspace, Keycloak, Auth0 and any OpenID Connect provider.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230868BD'/%3E%3Cpath d='M16 6l8 3v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V9z' fill='none' stroke='white' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M12.5 16l2.5 2.5 4.5-5' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#ffffff; --bg-soft:#f6f7f9; --bg-code:#f3f4f7; --line:#e3e6eb; --text:#1b1f27; --muted:#5b6472;
+  --accent:#0868BD; --accent-soft:#e7f1fb; --ok:#13804a; --ok-soft:#e6f5ec; --warn:#a15c00; --warn-soft:#fdf3e1;
+  --bad:#b42318; --bad-soft:#fdecea; --k:#7c3aed; --s:#0a7a3e; --c:#7d8796; --v:#b45309; --f:#0868BD;
+  --radius:10px; --side:270px; --head:58px;
+  --mono:ui-monospace,SFMono-Regular,"Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1217; --bg-soft:#151a21; --bg-code:#171c24; --line:#252c36; --text:#e6e9ee; --muted:#9aa3b0;
+  --accent:#1EA7FF; --accent-soft:#0f2738; --ok:#37c47c; --ok-soft:#10261b; --warn:#f0a23a; --warn-soft:#2b2010;
+  --bad:#ff7a6e; --bad-soft:#2d1514; --k:#c4a1ff; --s:#57d38c; --c:#7b8594; --v:#f4b35e; --f:#6cc4ff;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1217; --bg-soft:#151a21; --bg-code:#171c24; --line:#252c36; --text:#e6e9ee; --muted:#9aa3b0;
+  --accent:#1EA7FF; --accent-soft:#0f2738; --ok:#37c47c; --ok-soft:#10261b; --warn:#f0a23a; --warn-soft:#2b2010;
+  --bad:#ff7a6e; --bad-soft:#2d1514; --k:#c4a1ff; --s:#57d38c; --c:#7b8594; --v:#f4b35e; --f:#6cc4ff;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:calc(var(--head) + 16px);scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+a{color:var(--accent);text-underline-offset:.18em}
+a:hover{text-decoration-thickness:2px}
+code,kbd,pre{font-family:var(--mono);font-size:.875em;font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
+:not(pre)>code{background:var(--bg-code);border:1px solid var(--line);border-radius:5px;padding:.08em .35em;overflow-wrap:anywhere;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* Header */
+.top{position:sticky;top:0;z-index:20;height:var(--head);display:flex;align-items:center;gap:14px;padding:0 20px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--text);text-decoration:none;font-size:1.05rem;letter-spacing:-.01em}
+.brand svg{width:28px;height:28px;flex:none}
+.brand small{font-weight:500;color:var(--muted);font-size:.8rem;border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.top .sp{flex:1}
+.iconbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;min-width:36px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);cursor:pointer;font:inherit;font-size:.9rem;text-decoration:none}
+.iconbtn:hover{background:var(--bg-soft)}
+.iconbtn svg{width:18px;height:18px}
+.menu-btn{display:none}
+
+/* Layout */
+.wrap{display:grid;grid-template-columns:var(--side) minmax(0,1fr);max-width:1240px;margin:0 auto}
+.side{position:sticky;top:var(--head);height:calc(100vh - var(--head));overflow:auto;padding:22px 18px 40px 20px;border-right:1px solid var(--line)}
+.side input{width:100%;height:36px;border:1px solid var(--line);border-radius:8px;background:var(--bg-soft);color:var(--text);padding:0 10px;font:inherit;font-size:.9rem;margin-bottom:14px}
+.side h4{margin:18px 0 6px;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.side ul{list-style:none;margin:0;padding:0}
+.side a{display:block;padding:5px 10px;border-radius:7px;color:var(--text);text-decoration:none;font-size:.92rem}
+.side a:hover{background:var(--bg-soft)}
+.side a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.side .none{color:var(--muted);font-size:.85rem;padding:6px 10px;display:none}
+main{padding:34px 48px 90px;min-width:0}
+.doc{max-width:800px}
+
+/* Type */
+h1{font-size:2.35rem;line-height:1.15;letter-spacing:-.025em;margin:.2em 0 .35em}
+h2{font-size:1.6rem;letter-spacing:-.015em;margin:2.6em 0 .55em;padding-top:.4em;border-top:1px solid var(--line)}
+h2:first-of-type{border-top:0}
+h3{font-size:1.18rem;margin:1.9em 0 .45em}
+h2 a.anchor,h3 a.anchor{color:var(--muted);text-decoration:none;margin-left:8px;opacity:0;font-weight:400}
+h2:hover a.anchor,h3:hover a.anchor,a.anchor:focus{opacity:1}
+p,ul,ol{margin:.7em 0}
+li{margin:.25em 0}
+.lead{font-size:1.15rem;color:var(--muted);max-width:640px}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+
+/* Hero */
+.hero{padding:6px 0 10px}
+.hero .badges{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 22px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--muted);background:var(--bg-soft)}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:22px 0}
+@media (max-width:560px){.cards{grid-template-columns:1fr}}
+.card{border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 14px;background:var(--bg-soft)}
+.card b{display:block;margin-bottom:4px}
+.card p{margin:0;color:var(--muted);font-size:.93rem}
+
+/* Code */
+.code{position:relative;margin:1em 0}
+.code .lang{position:absolute;top:8px;left:14px;font:600 .68rem/1 var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+pre{margin:0;background:var(--bg-code);border:1px solid var(--line);border-radius:var(--radius);padding:30px 16px 14px;overflow:auto;line-height:1.55;tab-size:4}
+.copy{position:absolute;top:6px;right:6px;height:28px;padding:0 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--muted);font:500 .75rem/1 system-ui,sans-serif;cursor:pointer}
+.copy:hover{color:var(--text)}
+.tk-k{color:var(--k)} .tk-s{color:var(--s)} .tk-c{color:var(--c);font-style:italic} .tk-v{color:var(--v)} .tk-f{color:var(--f)}
+
+/* Callouts */
+.note{border:1px solid var(--line);border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:12px 16px;margin:1.2em 0}
+.note.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.note.sec{border-left-color:var(--ok);background:var(--ok-soft)}
+.note.bad{border-left-color:var(--bad);background:var(--bad-soft)}
+.note>:first-child{margin-top:0}.note>:last-child{margin-bottom:0}
+.note b.t{display:block;margin-bottom:2px}
+
+/* Tables */
+.tbl{overflow-x:auto;margin:1em 0;border:1px solid var(--line);border-radius:var(--radius)}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{background:var(--bg-soft);font-weight:600;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td:first-child{white-space:nowrap}
+td.def{color:var(--muted);white-space:nowrap}
+table.opts{table-layout:fixed;min-width:620px}
+table.opts th:nth-child(1){width:27%}
+table.opts th:nth-child(2){width:22%}
+table.opts td.def{white-space:normal;overflow-wrap:anywhere}
+
+/* Steps */
+ol.steps{counter-reset:s;list-style:none;padding:0}
+ol.steps>li{counter-increment:s;position:relative;padding:2px 0 10px 42px;margin:0}
+ol.steps>li::before{content:counter(s);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center}
+
+/* Diagram + flow */
+figure{margin:1.4em 0}
+figure svg{width:100%;height:auto;display:block}
+figcaption{color:var(--muted);font-size:.88rem;margin-top:8px}
+.diagram{border:1px solid var(--line);border-radius:var(--radius);background:var(--bg-soft);padding:14px;overflow-x:auto}
+.diagram svg{min-width:640px}
+.flow{display:grid;gap:10px;margin:1.2em 0}
+.fstep{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:stretch}
+.fq{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg-soft);font-weight:600}
+.fq small{display:block;font-weight:400;color:var(--muted)}
+.fa{border-radius:8px;padding:10px 12px;font-size:.92rem}
+.fa.yes{background:var(--ok-soft);border:1px solid color-mix(in srgb,var(--ok) 35%,transparent)}
+.fa.no{background:var(--bad-soft);border:1px solid color-mix(in srgb,var(--bad) 30%,transparent)}
+.fa.go{background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent)}
+.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 16px;margin:1em 0}
+@media (max-width:600px){.kv{grid-template-columns:minmax(0,1fr);gap:2px}.kv dd{margin-bottom:10px}}
+.kv dt{font-family:var(--mono);font-size:.86rem}
+.kv dd{margin:0;color:var(--muted)}
+
+footer{margin-top:4em;padding-top:1.4em;border-top:1px solid var(--line);color:var(--muted);font-size:.88rem}
+
+/* Mobile */
+@media (max-width:900px){
+  .wrap{grid-template-columns:minmax(0,1fr)}
+  .menu-btn{display:inline-flex}
+  .side{position:fixed;z-index:30;top:var(--head);left:0;width:min(86vw,320px);background:var(--bg);transform:translateX(-102%);transition:transform .2s,box-shadow .2s;border-right:1px solid var(--line);box-shadow:none;visibility:hidden}
+  body.nav-open .side{transform:none;visibility:visible;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+  main{padding:24px 16px 70px}
+  h1{font-size:1.9rem}
+  h2{font-size:1.35rem}
+  .fstep{grid-template-columns:1fr}
+  .top{padding:0 12px}
+  .brand small{display:none}
+  .gh-text{display:none}
+}
+</style>
+</head>
+<body>
+<script>
+// Theme before paint: saved choice, else the system's.
+try{var t=localStorage.getItem('shield-oidc-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}
+</script>
+
+<header class="top">
+  <button class="iconbtn menu-btn" id="menu" aria-label="Open the contents" aria-expanded="false" aria-controls="side">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
+  <a class="brand" href="#top">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0868BD"/><path d="M16 6l8 3v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V9z" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/><path d="M12.5 16l2.5 2.5 4.5-5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Shield OIDC <small>v1.0</small>
+  </a>
+  <span class="sp"></span>
+  <button class="iconbtn" id="theme" aria-label="Switch between light and dark">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+  </button>
+  <a class="iconbtn" href="https://github.com/iamtherealtim/shield-oidc" aria-label="Source code on GitHub">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2.1c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .5z"/></svg>
+    <span class="gh-text">GitHub</span>
+  </a>
+</header>
+
+<div class="wrap">
+<nav class="side" id="side" aria-label="Contents">
+  <input type="search" id="filter" placeholder="Filter topics  ( / )" aria-label="Filter topics">
+  <h4>Getting started</h4>
+  <ul>
+    <li><a href="#top">Overview</a></li>
+    <li><a href="#requirements">Requirements</a></li>
+    <li><a href="#install">Installation</a></li>
+    <li><a href="#how">How sign-in works</a></li>
+  </ul>
+  <h4>Providers</h4>
+  <ul>
+    <li><a href="#entra">Microsoft Entra ID</a></li>
+    <li><a href="#google">Google Workspace</a></li>
+    <li><a href="#okta">Okta</a></li>
+    <li><a href="#keycloak">Keycloak</a></li>
+    <li><a href="#auth0">Auth0</a></li>
+    <li><a href="#generic">Any OpenID Connect provider</a></li>
+  </ul>
+  <h4>Reference</h4>
+  <ul>
+    <li><a href="#options">Provider options</a></li>
+    <li><a href="#settings">App-wide settings</a></li>
+    <li><a href="#routes">Routes</a></li>
+    <li><a href="#helpers">Helpers</a></li>
+    <li><a href="#commands">Commands</a></li>
+    <li><a href="#events">Events</a></li>
+    <li><a href="#messages">Messages</a></li>
+  </ul>
+  <h4>Guides</h4>
+  <ul>
+    <li><a href="#accounts">Accounts and matching</a></li>
+    <li><a href="#trusted-email">When an email is trusted</a></li>
+    <li><a href="#linking">Connecting a provider</a></li>
+    <li><a href="#shield-actions">Shield actions (2FA)</a></li>
+    <li><a href="#groups">Roles and groups</a></li>
+    <li><a href="#logout">Logging out</a></li>
+    <li><a href="#customizing">Customizing</a></li>
+  </ul>
+  <h4>Security</h4>
+  <ul>
+    <li><a href="#security">What's verified</a></li>
+    <li><a href="#threats">Attacks and defences</a></li>
+    <li><a href="#hardening">Hardening your app</a></li>
+  </ul>
+  <h4>Help</h4>
+  <ul>
+    <li><a href="#troubleshooting">Troubleshooting</a></li>
+    <li><a href="#limits">Limitations</a></li>
+    <li><a href="#contributing">Testing and contributing</a></li>
+  </ul>
+  <p class="none" id="nomatch">No matching topics.</p>
+</nav>
+
+<main id="top">
+<div class="doc">
+
+<section class="hero">
+  <h1>Single sign-on for CodeIgniter Shield</h1>
+  <p class="lead">Let people sign in to your CodeIgniter app with their organization's account: Microsoft Entra ID, Okta, Google Workspace, Keycloak, Auth0 or any OpenID Connect provider. They come back as ordinary Shield users, with groups mapped from their roles if you want.</p>
+  <div class="badges">
+    <span class="pill">PHP 8.1+</span><span class="pill">CodeIgniter 4.5+</span><span class="pill">Shield 1.1+</span><span class="pill">MIT licence</span><span class="pill">No extra dependencies</span>
+  </div>
+  <div class="code"><span class="lang">bash</span><pre><code class="bash">composer require daemonlabs/shield-oidc
+php spark oidc:setup</code></pre></div>
+  <div class="cards">
+    <div class="card"><b>Verified, not just decoded</b><p>Every ID token's signature, issuer, audience, expiry and nonce are checked before anything in it is trusted.</p></div>
+    <div class="card"><b>No takeover by email</b><p>People are matched on a stable provider ID. An email address only counts when it can be trusted.</p></div>
+    <div class="card"><b>Entra done properly</b><p>One tenant or many, personal accounts, tenant allow-lists, and roles that other organizations can't grant themselves.</p></div>
+    <div class="card"><b>Fails closed</b><p>Misspelled settings are errors, odd provider data is a failed sign-in, and <code>oidc:check</code> warns about risky setups.</p></div>
+  </div>
+</section>
+
+<h2 id="requirements">Requirements<a class="anchor" href="#requirements" aria-label="Link to this section">#</a></h2>
+<ul>
+  <li>PHP 8.1 or newer with the <code>curl</code>, <code>json</code> and <code>openssl</code> extensions.</li>
+  <li>CodeIgniter 4.5 or newer, with <a href="https://shield.codeigniter.com/">Shield</a> 1.1 or newer installed and set up (<code>php spark shield:setup</code>).</li>
+  <li>HTTPS in production. Providers only send people back to https addresses (localhost excepted).</li>
+  <li>An app registration at your provider: a client id, and for most setups a client secret.</li>
+</ul>
+
+<h2 id="install">Installation<a class="anchor" href="#install" aria-label="Link to this section">#</a></h2>
+<ol class="steps">
+  <li>
+    <p><strong>Install the package and create its config file.</strong></p>
+    <div class="code"><span class="lang">bash</span><pre><code class="bash">composer require daemonlabs/shield-oidc
+php spark oidc:setup</code></pre></div>
+    <p><code>oidc:setup</code> writes <code>app/Config/ShieldOidc.php</code>. The package's routes, commands, helper and messages are picked up by CodeIgniter's module discovery; there's nothing to register.</p>
+  </li>
+  <li>
+    <p><strong>Let people reach the sign-in routes.</strong> If you use Shield's global <code>session</code> filter to require sign-in everywhere, exempt <code>oidc/*</code> (or <code>&lt;routePrefix&gt;/*</code>), or the button just sends people back to the login page.</p>
+    <div class="code"><span class="lang">php</span><pre><code class="php">// app/Config/Filters.php
+public array $globals = [
+    'before' => [
+        'session' => ['except' => ['login*', 'register', 'auth/a/*', 'logout', 'oidc/*']],
+    ],
+];</code></pre></div>
+  </li>
+  <li>
+    <p><strong>Add a provider</strong> to <code>app/Config/ShieldOidc.php</code> (see <a href="#entra">the provider guides</a>), then check it:</p>
+    <div class="code"><span class="lang">bash</span><pre><code class="bash">php spark oidc:check</code></pre></div>
+    <p>It loads the provider's settings, verifies them, and prints the <strong>redirect URI</strong> to register with the provider.</p>
+  </li>
+  <li>
+    <p><strong>Show the button</strong> on your login page:</p>
+    <div class="code"><span class="lang">php</span><pre><code class="php">&lt;?php helper('oidc') ?&gt;
+&lt;?= oidc_buttons() ?&gt;</code></pre></div>
+    <p>To put it on Shield's own login page, copy Shield's <code>login.php</code> view into your app, point <code>Config\Auth::$views['login']</code> at the copy, and add those two lines. Sign-in errors come back as <code>session('error')</code>, which Shield's views already display.</p>
+  </li>
+</ol>
+<div class="note warn">
+  <b class="t">Turned off Composer module discovery?</b>
+  <p>With <code>Config\Modules::$discoverInComposer = false</code> (or a restricted <code>$composerPackages</code>), CodeIgniter won't find the package's routes, commands or helper. Register its namespace yourself:</p>
+  <div class="code"><span class="lang">php</span><pre><code class="php">// app/Config/Autoload.php
+public $psr4 = [
+    APP_NAMESPACE           => APPPATH,
+    'DaemonLabs\ShieldOidc' => ROOTPATH . 'vendor/daemonlabs/shield-oidc/src',
+];</code></pre></div>
+</div>
+
+<h2 id="how">How sign-in works<a class="anchor" href="#how" aria-label="Link to this section">#</a></h2>
+<p>The package uses OpenID Connect's <em>authorization code flow</em> with PKCE. The browser carries only a one-time code and a random state; the tokens travel directly between your server and the provider.</p>
+<figure>
+  <div class="diagram">
+    <svg viewBox="0 0 760 520" role="img" aria-labelledby="seq-t seq-d" font-family="system-ui,-apple-system,Segoe UI,sans-serif">
+      <title id="seq-t">Sign-in sequence</title>
+      <desc id="seq-d">The browser asks your app to sign in, is sent to the provider, signs in there, comes back with a code, and your app exchanges the code for a verified ID token before logging the person in.</desc>
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--accent)"/></marker></defs>
+      <g style="color:var(--muted)" fill="currentColor" stroke="currentColor">
+        <g font-size="14" font-weight="700" stroke="none" text-anchor="middle" style="fill:var(--text)">
+          <text x="110" y="28">Browser</text><text x="380" y="28">Your app</text><text x="650" y="28">Identity provider</text>
+        </g>
+        <g stroke-dasharray="4 5" stroke-width="1.2"><line x1="110" y1="40" x2="110" y2="505"/><line x1="380" y1="40" x2="380" y2="505"/><line x1="650" y1="40" x2="650" y2="505"/></g>
+        <g stroke-width="1.6" fill="none" marker-end="url(#ah)" style="color:var(--accent)" stroke="currentColor">
+          <line x1="112" y1="70" x2="376" y2="70"/>
+          <line x1="378" y1="150" x2="114" y2="150"/>
+          <line x1="112" y1="190" x2="646" y2="190"/>
+          <line x1="648" y1="250" x2="114" y2="250"/>
+          <line x1="112" y1="290" x2="376" y2="290"/>
+          <line x1="382" y1="330" x2="646" y2="330"/>
+          <line x1="648" y1="370" x2="384" y2="370"/>
+          <line x1="378" y1="485" x2="114" y2="485"/>
+        </g>
+        <g font-size="12.5" stroke="none" style="fill:var(--text)">
+          <text x="120" y="62">1  GET /oidc/entra/login</text>
+          <text x="392" y="98">2  create state, nonce, PKCE verifier</text>
+          <text x="392" y="116" style="fill:var(--muted)">   (kept in the session)</text>
+          <text x="120" y="142">3  redirect to the provider</text>
+          <text x="120" y="182">4  sign in at the provider (password, MFA, ...)</text>
+          <text x="120" y="226">5  redirect back with code + state</text>
+          <text x="120" y="242" style="fill:var(--muted)">   /oidc/entra/callback?code=...&amp;state=...</text>
+          <text x="120" y="282">6  GET /oidc/entra/callback</text>
+          <text x="392" y="322">7  POST code + verifier (+ secret)</text>
+          <text x="392" y="362">8  ID token (+ access token)</text>
+          <text x="392" y="400">9  verify signature, issuer, audience,</text>
+          <text x="392" y="416">    expiry, nonce</text>
+          <text x="392" y="442">10 find or create the Shield user, log in</text>
+          <text x="120" y="477">11 redirect to the app, signed in</text>
+        </g>
+        <rect x="384" y="300" width="268" height="78" rx="8" fill="none" stroke-dasharray="3 4" style="color:var(--ok)" stroke="currentColor"/>
+        <text x="518" y="296" font-size="11" text-anchor="middle" stroke="none" style="fill:var(--ok)">back channel: server to server over TLS</text>
+      </g>
+    </svg>
+  </div>
+  <figcaption>The browser never sees the tokens, and the code is useless without the PKCE verifier kept in your app's session.</figcaption>
+</figure>
+<p>A few details matter for security:</p>
+<ul>
+  <li>The <strong>state</strong> ties the callback to the browser session that started it, and is single-use. A callback URL copied into another browser fails.</li>
+  <li>The <strong>nonce</strong> ties the ID token to this one sign-in, so a token issued for an earlier one can't be replayed.</li>
+  <li>The <strong>PKCE verifier</strong> means a stolen code can't be exchanged by anyone else.</li>
+  <li>Only after the token is verified does <a href="#accounts">account matching</a> decide which Shield user this is.</li>
+</ul>
+
+<h2 id="entra">Microsoft Entra ID<a class="anchor" href="#entra" aria-label="Link to this section">#</a></h2>
+<h3 id="entra-register">Register the app</h3>
+<ol>
+  <li>In the Entra admin centre, open <em>Entra ID &gt; App registrations</em> and choose <em>New registration</em>.</li>
+  <li>Under <em>Supported account types</em>, pick who can sign in. It must match your <code>tenant</code> setting (see the table below): <em>Single tenant only</em> for one organization (recommended), <em>Multiple Entra ID tenants</em> for <code>organizations</code>, <em>Any Entra ID Tenant + Personal Microsoft accounts</em> for <code>common</code>, <em>Personal accounts only</em> for <code>consumers</code>.</li>
+  <li>Under <em>Redirect URI</em>, choose <em>Web</em> and paste the URI that <code>php spark oidc:check</code> prints, e.g. <code>https://example.com/oidc/entra/callback</code>.</li>
+  <li>Copy the <em>Application (client) ID</em> and the <em>Directory (tenant) ID</em>. Under <em>Certificates &amp; secrets &gt; Client secrets</em>, create a secret and copy its value. Entra allows at most 24 months and recommends under 12; note when it expires.</li>
+  <li>Under <em>Token configuration &gt; Add optional claim &gt; ID</em>, add <code>email</code> and <code>xms_edov</code> (see <a href="#entra-claims">which claims to add</a>).</li>
+</ol>
+<p>A Web app needs its client secret: Entra doesn't accept public clients (PKCE only) on a Web redirect URI. Certificate credentials (<code>private_key_jwt</code>), which Microsoft prefers for production, aren't supported yet.</p>
+<h3 id="entra-config">Configure it</h3>
+<div class="code"><span class="lang">php</span><pre><code class="php">namespace Config;
+
+use DaemonLabs\ShieldOidc\Config\ShieldOidc as BaseShieldOidc;
+
+class ShieldOidc extends BaseShieldOidc
+{
+    public array $providers = [];
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->providers['entra'] = [
+            'type'         => 'entra',
+            'tenant'       => env('ENTRA_TENANT'),        // tenant id or domain
+            'clientId'     => env('ENTRA_CLIENT_ID'),
+            'clientSecret' => env('ENTRA_CLIENT_SECRET'),
+        ];
+    }
+}</code></pre></div>
+<div class="code"><span class="lang">.env</span><pre><code class="bash">ENTRA_TENANT = 11111111-2222-3333-4444-555555555555
+ENTRA_CLIENT_ID = 66666666-7777-8888-9999-000000000000
+ENTRA_CLIENT_SECRET = "your-secret-value"</code></pre></div>
+<p>Keep <code>profile</code> in <code>scopes</code> (it's in the default): Entra sends the <code>oid</code> claim that identifies people only with that scope. For US Government cloud set <code>'authority' =&gt; 'https://login.microsoftonline.us'</code>; for China (21Vianet) <code>'authority' =&gt; 'https://login.partner.microsoftonline.cn'</code>.</p>
+<h3 id="entra-tenants">One organization or several</h3>
+<div class="tbl"><table>
+  <thead><tr><th><code>tenant</code></th><th>Who can sign in</th></tr></thead>
+  <tbody>
+    <tr><td>tenant id or domain</td><td>Only your organization. <strong>Recommended.</strong></td></tr>
+    <tr><td><code>organizations</code></td><td>Any work or school account, from any organization</td></tr>
+    <tr><td><code>common</code></td><td>Work, school and personal Microsoft accounts</td></tr>
+    <tr><td><code>consumers</code></td><td>Personal Microsoft accounts only</td></tr>
+  </tbody>
+</table></div>
+<p>With several organizations, limit who gets in with <code>allowedTenants</code>, a list of tenant ids. Tokens are always checked against the tenant they came from, following Microsoft's documented rule: an <code>organizations</code> setup refuses personal accounts, the token's issuer and <code>tid</code> must agree, and a tenant configured by id must be that tenant.</p>
+<div class="note sec">
+  <b class="t">Why multi-tenant apps need care</b>
+  <p>Every organization's administrators control their own users' details, including email addresses and which of your app's roles they hold. So the package ignores roles from other tenants unless you list them in <a href="#groups"><code>groupTenants</code></a>, and only trusts emails that carry Entra's <code>xms_edov</code> claim (the <a href="https://www.descope.com/blog/post/noauth">nOAuth</a> problem).</p>
+</div>
+<h3 id="entra-claims">Which claims to add</h3>
+<p>Under <em>Token configuration &gt; Add optional claim &gt; ID</em> (or in the app manifest's <code>optionalClaims.idToken</code>):</p>
+<div class="tbl"><table>
+  <thead><tr><th>Claim</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td><code>email</code></td><td>The person's address, for new accounts and <code>allowedDomains</code>.</td></tr>
+    <tr><td><code>xms_edov</code></td><td>Says the address's domain is verified by the issuing tenant. Without it, Entra emails aren't trusted: new users get no email, existing accounts aren't linked by email, and <code>allowedDomains</code> admits no one. Microsoft notes even a single tenant's <code>email</code> can hold an address an administrator typed in.</td></tr>
+    <tr><td><code>auth_time</code></td><td>Optional. When present, connecting an account also checks the sign-in really was fresh.</td></tr>
+    <tr><td><code>login_hint</code></td><td>Optional. With <code>logoutAtProvider</code>, signing out skips Entra's account picker.</td></tr>
+  </tbody>
+</table></div>
+<div class="code"><span class="lang">manifest</span><pre><code class="plain">"optionalClaims": {
+    "idToken": [
+        { "name": "email" },
+        { "name": "xms_edov" },
+        { "name": "auth_time" },
+        { "name": "login_hint" }
+    ]
+}</code></pre></div>
+<p>Entra people are identified by their <code>oid</code> (object id), Microsoft's recommended identifier: the same across your app registrations, unlike the per-app <code>sub</code>. The userinfo call is off by default for Entra, since Microsoft documents it as returning only what the ID token already has. Apps with custom signing keys (claims mapping) aren't supported.</p>
+
+<h2 id="google">Google Workspace<a class="anchor" href="#google" aria-label="Link to this section">#</a></h2>
+<p>In the Google Cloud console, create an OAuth client of type <em>Web application</em> and add the redirect URI from <code>oidc:check</code>. Then:</p>
+<div class="code"><span class="lang">php</span><pre><code class="php">$this->providers['google'] = [
+    'issuer'         => 'https://accounts.google.com',
+    'clientId'       => env('GOOGLE_CLIENT_ID'),
+    'clientSecret'   => env('GOOGLE_CLIENT_SECRET'),
+    'requiredClaims' => ['hd' => 'yourcompany.com'],
+];</code></pre></div>
+<div class="note warn">
+  <b class="t">Use <code>hd</code> to mean "our Workspace"</b>
+  <p>Google adds the <code>hd</code> claim only for accounts that belong to a Google Workspace or Cloud Identity organization, set to that organization's domain; <code>requiredClaims</code> checks it's yours. The email domain alone proves nothing: someone can make a personal Google account with a company address. Setting the OAuth client's audience to <em>Internal</em> in the console also limits sign-in to your organization. Without either, any Google account can sign in.</p>
+</div>
+<ul>
+  <li><strong>Emails.</strong> Following Google's guidance, an email counts only if it's an <code>@gmail.com</code> address, or <code>email_verified</code> is true <em>and</em> <code>hd</code> is present. A personal account's third-party address may have been verified years ago by someone who no longer owns it.</li>
+  <li><strong>Connecting an account.</strong> Google documents only <code>prompt=none|consent|select_account</code> and doesn't send <code>auth_time</code> by default, so linking shows Google's account picker (<code>select_account</code>) rather than forcing a new password entry.</li>
+  <li><strong>Logout.</strong> Google has no provider logout endpoint, so <code>logoutAtProvider</code> signs people out of your app only.</li>
+</ul>
+
+<h2 id="okta">Okta<a class="anchor" href="#okta" aria-label="Link to this section">#</a></h2>
+<p>Create an app integration (<em>OIDC – OpenID Connect</em>, <em>Web Application</em>), add the redirect URI under <em>Sign-in redirect URIs</em> and your <code>$logoutRedirect</code> address under <em>Sign-out redirect URIs</em>, and assign the people or groups who may use it (unassigned people come back with "access denied").</p>
+<div class="code"><span class="lang">php</span><pre><code class="php">$this->providers['okta'] = [
+    'label'        => 'Okta',
+    'issuer'       => 'https://your-org.okta.com',        // or .../oauth2/default
+    'clientId'     => env('OKTA_CLIENT_ID'),
+    'clientSecret' => env('OKTA_CLIENT_SECRET'),
+    'logoutAtProvider' => true,
+];</code></pre></div>
+<p>Use the issuer exactly as Okta shows it: <code>https://your-org.okta.com</code> for the org authorization server, or <code>https://your-org.okta.com/oauth2/default</code> (or <code>/oauth2/&lt;id&gt;</code>) for a custom one. Okta sends <code>auth_time</code> in every ID token, so the fresh-sign-in check for connecting accounts fully applies.</p>
+<h3 id="okta-groups">Groups</h3>
+<ul>
+  <li><strong>Org authorization server</strong> (<code>https://your-org.okta.com</code>): on the app's <em>Sign On</em> tab, set a <em>Groups claim filter</em> (e.g. <em>groups</em>, <em>Matches regex</em>, <code>^app-.*</code>), and request the <code>groups</code> scope: <code>'scopes' =&gt; ['openid', 'profile', 'email', 'groups']</code>.</li>
+  <li><strong>Custom authorization server</strong> (<code>/oauth2/default</code>): under <em>Security &gt; API &gt; your server &gt; Claims</em>, add a claim named <code>groups</code>, included in the <em>ID Token</em>, <em>Always</em>, value type <em>Groups</em> with a filter. No extra scope needed.</li>
+</ul>
+<p>Then <code>'groupsClaim' =&gt; 'groups'</code> and a <code>groupMap</code> keyed on group names. Keep the filter narrow: Okta fails the request if more than 100 groups match. If the app's client authentication is set to <em>Client secret post</em>, add <code>'tokenAuthMethod' =&gt; 'client_secret_post'</code>.</p>
+
+<h2 id="keycloak">Keycloak<a class="anchor" href="#keycloak" aria-label="Link to this section">#</a></h2>
+<p>Create a client with <em>Client authentication</em> on (confidential, authenticator <em>Client ID and Secret</em>) and <em>Standard flow</em> enabled. Add the redirect URI to <em>Valid redirect URIs</em> and, for <code>logoutAtProvider</code>, your <code>$logoutRedirect</code> address to <em>Valid post logout redirect URIs</em>. Setting <em>PKCE method</em> to <em>S256</em> is recommended.</p>
+<div class="code"><span class="lang">php</span><pre><code class="php">$this->providers['keycloak'] = [
+    'label'        => 'Company login',
+    'issuer'       => 'https://keycloak.example.com/realms/your-realm',
+    'clientId'     => env('KEYCLOAK_CLIENT_ID'),
+    'clientSecret' => env('KEYCLOAK_CLIENT_SECRET'),
+];</code></pre></div>
+<ul>
+  <li><strong>Issuer.</strong> <code>https://host/realms/&lt;realm&gt;</code>; installations from before Keycloak 17, or with a custom relative path, have <code>/auth</code> before <code>/realms</code>.</li>
+  <li><strong>Leave "Exclude Issuer From Authentication Response" off</strong> (client <em>Advanced</em> settings). Keycloak advertises that it always names itself in the redirect (RFC 9207), so a redirect without it is refused as a possible mix-up attack.</li>
+  <li><strong>Signature algorithm.</strong> The ID token must be signed with RS256/384/512 or ES256/384/512 (the default is RS256). PS256 and EdDSA aren't supported yet.</li>
+  <li><strong>Groups.</strong> Add a <em>Group Membership</em> mapper with token claim name <code>groups</code> and <em>Add to ID token</em> on. Values are full paths like <code>/admins</code> unless you turn <em>Full group path</em> off, so key <code>groupMap</code> accordingly.</li>
+  <li><strong>Realm roles</strong> normally sit in <code>realm_access.roles</code> in the access token only. Add a <em>User Realm Role</em> mapper with claim name <code>roles</code> (no dot), <em>Multivalued</em> and <em>Add to ID token</em> on, then use <code>'groupsClaim' =&gt; 'roles'</code>.</li>
+  <li><strong>Client authentication.</strong> If the client's allowed authentication method is restricted to form posts, add <code>'tokenAuthMethod' =&gt; 'client_secret_post'</code>.</li>
+</ul>
+
+<h2 id="auth0">Auth0<a class="anchor" href="#auth0" aria-label="Link to this section">#</a></h2>
+<p>Create a <em>Regular Web Application</em>. Add the redirect URI under <em>Allowed Callback URLs</em> and your <code>$logoutRedirect</code> address under <em>Allowed Logout URLs</em>. Auth0's issuer ends with a slash; with a custom domain, use that domain.</p>
+<div class="code"><span class="lang">php</span><pre><code class="php">$this->providers['auth0'] = [
+    'label'        => 'Auth0',
+    'issuer'       => 'https://your-tenant.auth0.com/',
+    'clientId'     => env('AUTH0_CLIENT_ID'),
+    'clientSecret' => env('AUTH0_CLIENT_SECRET'),
+];</code></pre></div>
+<ul>
+  <li><strong>Signing algorithm.</strong> Under <em>Advanced Settings &gt; OAuth</em>, the JSON Web Token signature algorithm must be <strong>RS256</strong>. Apps created through the Management API default to HS256, which is refused (HMAC tokens can be forged by anyone holding the client secret).</li>
+  <li><strong>Client authentication.</strong> Under <em>Credentials</em>, use <em>Client Secret (Basic)</em>, or set <code>'tokenAuthMethod' =&gt; 'client_secret_post'</code> to match <em>Client Secret (Post)</em>.</li>
+  <li><strong>Logout.</strong> For <code>logoutAtProvider</code>, turn on <em>RP-Initiated Logout End Session Endpoint Discovery</em> in the tenant's advanced settings (on by default for tenants created since November 2023); without it Auth0 publishes no logout endpoint.</li>
+  <li><strong>Roles.</strong> Auth0 only allows namespaced custom claims. Add them with a post-login Action, e.g. <code>api.idToken.setCustomClaim('https://example.com/roles', event.authorization.roles)</code>, then <code>'groupsClaim' =&gt; 'https://example.com/roles'</code>.</li>
+  <li><strong>Emails.</strong> For social and enterprise connections, Auth0 passes on whatever <code>email_verified</code> the upstream provider says. If you allow many connections, consider <code>'linkByEmail' =&gt; 'never'</code> or <code>requiredClaims</code>.</li>
+</ul>
+
+<h2 id="generic">Any OpenID Connect provider<a class="anchor" href="#generic" aria-label="Link to this section">#</a></h2>
+<p>Authentik, Zitadel, AWS Cognito, Ping, OneLogin, Dex and others work the same way. The <code>issuer</code> is the address that <code>/.well-known/openid-configuration</code> sits under, as the provider writes it in that document (a missing or extra trailing slash is tolerated). Everything else (endpoints, signing keys, supported algorithms) is read from there.</p>
+<ul>
+  <li>Connecting an account sends <code>prompt=login</code> and <code>max_age=0</code>, which obliges a spec-following provider to report <code>auth_time</code>. If yours never does, set <code>'requireAuthTime' =&gt; false</code>; if it doesn't understand <code>prompt=login</code>, set <code>reauthParams</code> (e.g. <code>['prompt' =&gt; 'select_account']</code>).</li>
+  <li>If the provider adds extra audiences to ID tokens on purpose, list them in <code>trustedAudiences</code>; otherwise such tokens are refused, as OpenID Connect requires.</li>
+  <li>Without a <code>clientSecret</code> the app acts as a public client relying on PKCE alone, which some providers allow for web apps (Entra doesn't).</li>
+</ul>
+
+<h2 id="options">Provider options<a class="anchor" href="#options" aria-label="Link to this section">#</a></h2>
+<p>Set these per provider. Anything you leave out comes from <code>$defaults</code> in your config, then from the package's own defaults. Settings are checked strictly: a misspelled name or a wrong type is an error (shown by <code>oidc:check</code> and in the log), never quietly ignored.</p>
+<h3 id="options-connection">Connection</h3>
+<div class="tbl"><table class="opts">
+  <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>type</code></td><td class="def">generic</td><td><code>entra</code> for Microsoft Entra ID; anything else is a standard OpenID Connect provider.</td></tr>
+    <tr><td><code>issuer</code></td><td class="def">required*</td><td>The provider's issuer URL. *Not used with <code>type = entra</code>.</td></tr>
+    <tr><td><code>tenant</code></td><td class="def">required*</td><td>Entra: tenant id or domain, <code>organizations</code>, <code>common</code> or <code>consumers</code>.</td></tr>
+    <tr><td><code>authority</code></td><td class="def">login.microsoftonline.com</td><td>Entra: sign-in host, for national clouds.</td></tr>
+    <tr><td><code>clientId</code></td><td class="def">required</td><td>From the app registration.</td></tr>
+    <tr><td><code>clientSecret</code></td><td class="def">empty</td><td>From the app registration. Empty = public client (PKCE only), where the provider allows it (Entra doesn't).</td></tr>
+    <tr><td><code>tokenAuthMethod</code></td><td class="def">auto</td><td><code>client_secret_basic</code> or <code>client_secret_post</code>, for providers that enforce the method registered for the app. <code>auto</code> picks Basic when the provider offers it.</td></tr>
+    <tr><td><code>label</code></td><td class="def">SSO / Microsoft</td><td>Button text: "Sign in with <em>label</em>".</td></tr>
+    <tr><td><code>scopes</code></td><td class="def">openid profile email</td><td>Requested scopes. <code>openid</code> is always added.</td></tr>
+    <tr><td><code>authParams</code></td><td class="def">[]</td><td>Extra authorization parameters, e.g. <code>['prompt' =&gt; 'select_account']</code> or <code>['domain_hint' =&gt; 'example.com']</code>. The parameters the package sets itself (<code>state</code>, <code>nonce</code>, <code>redirect_uri</code>, <code>scope</code>, <code>response_type</code>, <code>response_mode</code>, PKCE) are refused.</td></tr>
+    <tr><td><code>redirectUri</code></td><td class="def">/oidc/&lt;key&gt;/callback</td><td>Override the callback URL (it must still reach this package's callback route).</td></tr>
+    <tr><td><code>algorithms</code></td><td class="def">all six</td><td>Accepted ID token algorithms: RS256, RS384, RS512, ES256, ES384, ES512. Never widened beyond this list.</td></tr>
+    <tr><td><code>userinfo</code></td><td class="def">true / false</td><td>Fetch claims the ID token left out from the userinfo endpoint (only with a Bearer access token). They never override the ID token, and an email's verified flag never comes from a different source than the email.</td></tr>
+    <tr><td><code>trustedAudiences</code></td><td class="def">[]</td><td>Extra ID token audiences to accept besides your client id. Any other audience is refused, as OpenID Connect requires.</td></tr>
+  </tbody>
+</table></div>
+<h3 id="options-access">Who gets in</h3>
+<div class="tbl"><table class="opts">
+  <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>register</code></td><td class="def">true</td><td>Create a Shield user on first sign-in. <code>false</code> = only people who already have an account (or get linked).</td></tr>
+    <tr><td><code>allowedTenants</code></td><td class="def">[]</td><td>Entra with several tenants: only these tenant ids may sign in.</td></tr>
+    <tr><td><code>allowedDomains</code></td><td class="def">[]</td><td>Only people whose <a href="#trusted-email">trusted</a> email is in these domains (exact match). Checked on every sign-in and link.</td></tr>
+    <tr><td><code>requiredClaims</code></td><td class="def">[]</td><td>Claims that must have one of the given values, e.g. <code>['hd' =&gt; 'example.com']</code> or <code>['groups' =&gt; ['staff', 'contractors']]</code>. Checked on every sign-in and link.</td></tr>
+    <tr><td><code>linkByEmail</code></td><td class="def">verified</td><td>Whether a first sign-in may attach to an existing account with the same email: <code>verified</code>, <code>trusted</code> or <code>never</code>. See <a href="#trusted-email">trusted emails</a>.</td></tr>
+  </tbody>
+</table></div>
+<h3 id="options-users">Users and groups</h3>
+<div class="tbl"><table class="opts">
+  <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>subjectClaim</code></td><td class="def">sub / oid</td><td>Claim that identifies a person. Only use a claim people can't change themselves.</td></tr>
+    <tr><td><code>usernameClaim</code></td><td class="def">none</td><td>Fill Shield's username from a claim, e.g. <code>preferred_username</code>, if that username is free.</td></tr>
+    <tr><td><code>defaultGroup</code></td><td class="def">true</td><td><code>false</code> = don't add new users to Shield's default group.</td></tr>
+    <tr><td><code>groupsClaim</code></td><td class="def">none / roles</td><td>Claim holding groups or roles.</td></tr>
+    <tr><td><code>groupMap</code></td><td class="def">[]</td><td>Claim value =&gt; Shield group, e.g. <code>['App.Admin' =&gt; 'admin']</code>.</td></tr>
+    <tr><td><code>groupTenants</code></td><td class="def">[]</td><td>Entra with several tenants: whose roles and groups to honour.</td></tr>
+    <tr><td><code>syncGroups</code></td><td class="def">false</td><td>Also remove mapped groups people no longer have.</td></tr>
+    <tr><td><code>logoutAtProvider</code></td><td class="def">false</td><td><code>/oidc/logout</code> also ends the session at the provider.</td></tr>
+    <tr><td><code>loginActions</code></td><td class="def">false</td><td>Run Shield's configured login action (e.g. Email2FA) for SSO sign-ins too, as Shield does for magic links. Off: the provider handles MFA.</td></tr>
+    <tr><td><code>reauthParams</code></td><td class="def">per provider</td><td>Authorization parameters that force a fresh sign-in when connecting an account. Default <code>prompt=login</code> + <code>max_age=0</code>; Entra <code>prompt=login</code>; Google <code>prompt=select_account</code>.</td></tr>
+    <tr><td><code>requireAuthTime</code></td><td class="def">true / false</td><td>Fail a fresh-sign-in check when the provider sends no <code>auth_time</code>. On by default (the spec requires it with <code>max_age</code>); off for Entra and Google, which don't send it by default.</td></tr>
+  </tbody>
+</table></div>
+<p>Defaults marked "x / y" differ by provider: the second value is Entra's (and for <code>requireAuthTime</code>, Google's too).</p>
+
+<h2 id="settings">App-wide settings<a class="anchor" href="#settings" aria-label="Link to this section">#</a></h2>
+<div class="tbl"><table class="opts">
+  <thead><tr><th>Property</th><th>Default</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>$routePrefix</code></td><td class="def">oidc</td><td>URL prefix of the package's routes.</td></tr>
+    <tr><td><code>$failureRedirect</code></td><td class="def">/login</td><td>Where a failed sign-in goes (a path relative to <code>app.baseURL</code>).</td></tr>
+    <tr><td><code>$logoutRedirect</code></td><td class="def">/</td><td>Where people land after <code>/oidc/logout</code> (a path).</td></tr>
+    <tr><td><code>$clockSkew</code></td><td class="def">120</td><td>Seconds of clock difference tolerated in token times.</td></tr>
+    <tr><td><code>$cacheTtl</code></td><td class="def">3600</td><td>Seconds discovery documents and signing keys are cached.</td></tr>
+    <tr><td><code>$stateTtl</code></td><td class="def">600</td><td>Seconds a sign-in may take at the provider.</td></tr>
+    <tr><td><code>$httpTimeout</code></td><td class="def">10</td><td>Timeout for calls to the provider, in seconds.</td></tr>
+    <tr><td><code>$allowLocalHttp</code></td><td class="def">false</td><td>Allow a plain-http provider on localhost, for development only.</td></tr>
+    <tr><td><code>$httpClient</code></td><td class="def">CurlHttpClient</td><td>Class implementing <code>HttpClient</code>, e.g. to use a proxy.</td></tr>
+    <tr><td><code>$userResolver</code></td><td class="def">UserResolver</td><td>Class that turns claims into users; see <a href="#customizing">Customizing</a>.</td></tr>
+    <tr><td><code>$defaults</code></td><td class="def">see above</td><td>Defaults for every provider. Your values are merged over the package's.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="routes">Routes<a class="anchor" href="#routes" aria-label="Link to this section">#</a></h2>
+<div class="tbl"><table>
+  <thead><tr><th>Method and path</th><th>Name</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET /oidc/&lt;provider&gt;/login</code></td><td><code>oidc-login</code></td><td>Starts sign-in. <code>?return=/path</code> picks where to land (local paths only).</td></tr>
+    <tr><td><code>GET /oidc/&lt;provider&gt;/callback</code></td><td><code>oidc-callback</code></td><td>Where the provider sends people back. Register this URL.</td></tr>
+    <tr><td><code>POST /oidc/&lt;provider&gt;/link</code></td><td><code>oidc-link</code></td><td>Signed-in users connect a provider. Use <code>oidc_link_form()</code>.</td></tr>
+    <tr><td><code>GET|POST /oidc/logout</code></td><td><code>oidc-logout</code></td><td>Signs out, and at the provider too with <code>logoutAtProvider</code>.</td></tr>
+  </tbody>
+</table></div>
+<p>The prefix comes from <code>$routePrefix</code>. Unknown or misconfigured providers answer 404.</p>
+
+<h2 id="helpers">Helpers<a class="anchor" href="#helpers" aria-label="Link to this section">#</a></h2>
+<p>Load them with <code>helper('oidc')</code>, or add <code>'oidc'</code> to <code>Config\Autoload::$helpers</code>.</p>
+<h3 id="h-buttons"><code>oidc_buttons(?string $returnTo = null): string</code></h3>
+<p>"Sign in with …" links for every configured provider, inside <code>&lt;div class="oidc-buttons"&gt;</code>; each link has the classes <code>oidc-button oidc-button-&lt;key&gt; btn btn-outline-secondary</code>, so it fits Shield's Bootstrap views. Misconfigured providers are skipped.</p>
+<h3 id="h-url"><code>oidc_login_url(string $provider, ?string $returnTo = null): string</code></h3>
+<p>The URL that starts sign-in, for building your own buttons.</p>
+<div class="code"><span class="lang">php</span><pre><code class="php">&lt;a class="btn btn-primary" href="&lt;?= esc(oidc_login_url('entra', '/dashboard'), 'attr') ?&gt;"&gt;
+    Sign in with your work account
+&lt;/a&gt;</code></pre></div>
+<h3 id="h-link"><code>oidc_link_form(string $provider, ?string $returnTo = null, ?string $label = null): string</code></h3>
+<p>A small POST form a signed-in user submits to connect a provider. It includes <code>csrf_field()</code> and a per-session token. The button reads "Connect <em>label</em>" unless you pass your own. See <a href="#linking">Connecting a provider</a>.</p>
+
+<h2 id="commands">Commands<a class="anchor" href="#commands" aria-label="Link to this section">#</a></h2>
+<h3 id="c-setup"><code>php spark oidc:setup [-f]</code></h3>
+<p>Creates <code>app/Config/ShieldOidc.php</code>, extending the package config, with commented examples. Refuses to overwrite an existing file unless you pass <code>-f</code>.</p>
+<h3 id="c-check"><code>php spark oidc:check [provider]</code></h3>
+<p>Checks every provider (or one), using the provider's live settings, and exits non-zero when one needs attention. Run it after every configuration change.</p>
+<div class="code"><span class="lang">output</span><pre><code class="plain">Provider: entra
+  Type                Microsoft Entra ID (tenant contoso.onmicrosoft.com)
+  Issuer              https://login.microsoftonline.com/1111.../v2.0
+  Signing keys        6 published; algorithms RS256
+  Client              6666... (with secret)
+  Scopes              openid profile email
+  Identifies users by iss + oid
+  New accounts        created on first sign-in
+  Link by email       verified
+  Groups              claim "roles" -> admin, developer (synced)
+
+  Register this redirect URI with the provider:
+    https://example.com/oidc/entra/callback
+
+All providers look good.</code></pre></div>
+<p>It also warns when, for example, any Microsoft account could create an account, a multi-tenant <code>groupMap</code> is being ignored, <code>linkByEmail</code> is <code>trusted</code> where that's risky, or users are identified by a claim other than <code>sub</code>/<code>oid</code>.</p>
+
+<h2 id="events">Events<a class="anchor" href="#events" aria-label="Link to this section">#</a></h2>
+<div class="tbl"><table>
+  <thead><tr><th>Event</th><th>Arguments</th><th>When</th></tr></thead>
+  <tbody>
+    <tr><td><code>oidcLogin</code></td><td><code>User $user, array $claims, string $provider</code></td><td>Someone signed in through a provider. (When a Shield action comes first, Shield fires its own <code>login</code> once it's done instead.)</td></tr>
+    <tr><td><code>oidcRegister</code></td><td><code>User $user, array $claims, string $provider</code></td><td>A new user was created.</td></tr>
+    <tr><td><code>oidcLink</code></td><td><code>User $user, array $claims, string $provider</code></td><td>A provider identity was attached to an existing user.</td></tr>
+    <tr><td><code>oidcFailed</code></td><td><code>string $provider, OidcException $e</code></td><td>A sign-in or link failed. <code>$e-&gt;getDetail()</code> has the reason.</td></tr>
+  </tbody>
+</table></div>
+<div class="code"><span class="lang">php</span><pre><code class="php">// app/Config/Events.php
+Events::on('oidcRegister', static function ($user, array $claims, string $provider) {
+    // e.g. copy the person's name into your profile table
+    model(ProfileModel::class)->insert(['user_id' => $user->id, 'name' => $claims['name'] ?? null]);
+});</code></pre></div>
+<p>Shield's own <code>login</code>, <code>logout</code> and <code>register</code> events fire as usual, so your existing listeners see SSO users too. Shield's <code>failedLogin</code> isn't fired (its payload is password credentials); use <code>oidcFailed</code>. Sign-ins are recorded in <code>auth_logins</code> with <code>id_type</code> <code>oidc</code>, which Shield's <code>lastLogin()</code> includes.</p>
+
+<h2 id="messages">Messages<a class="anchor" href="#messages" aria-label="Link to this section">#</a></h2>
+<p>What people see when sign-in fails, and what usually causes it. Copy <code>Language/en/Oidc.php</code> to <code>app/Language/&lt;locale&gt;/Oidc.php</code> to translate or reword them. The exact reason is always in the log.</p>
+<div class="tbl"><table>
+  <thead><tr><th>Key</th><th>Message</th><th>Usual cause</th></tr></thead>
+  <tbody>
+    <tr><td><code>accessDenied</code></td><td>Sign-in was cancelled, or your account isn't allowed to use this app.</td><td>The person cancelled, or the provider refused them (e.g. not assigned to the app in Okta or Entra).</td></tr>
+    <tr><td><code>stateInvalid</code></td><td>This sign-in link isn't valid any more.</td><td>Callback opened twice, in another browser, or after the session ended.</td></tr>
+    <tr><td><code>stateExpired</code></td><td>Sign-in took too long.</td><td>More than <code>$stateTtl</code> at the provider.</td></tr>
+    <tr><td><code>tokenInvalid</code></td><td>We couldn't verify your sign-in.</td><td>Token check failed: wrong tenant, an untrusted extra audience, an HMAC-signed token, clock skew, a missing or stale <code>auth_time</code> when connecting, or a token endpoint error.</td></tr>
+    <tr><td><code>providerUnavailable</code></td><td>Single sign-on isn't working right now.</td><td>Provider unreachable, or its settings don't match the configuration.</td></tr>
+    <tr><td><code>providerError</code></td><td>The sign-in provider reported a problem.</td><td>The provider returned an error other than a cancellation.</td></tr>
+    <tr><td><code>noAccount</code></td><td>There's no account for you here yet.</td><td><code>register</code> is off and nothing matched.</td></tr>
+    <tr><td><code>emailTaken</code></td><td>An account with your email address already exists…</td><td>A matching account exists but the email isn't trusted, <code>linkByEmail</code> is <code>never</code>, or the account isn't activated.</td></tr>
+    <tr><td><code>domainNotAllowed</code></td><td>Accounts from your organization can't sign in here.</td><td><code>allowedDomains</code> or <code>requiredClaims</code> didn't match.</td></tr>
+    <tr><td><code>alreadyLinked</code></td><td>That account is already connected to a different user.</td><td>Connecting an identity another user already has.</td></tr>
+    <tr><td><code>linkNeedsLogin</code></td><td>Sign in first, then connect your account.</td><td>Link request without a signed-in user.</td></tr>
+    <tr><td><code>notActivated</code></td><td>Your account hasn't been activated yet.</td><td>Shield requires activation and this account hasn't completed it.</td></tr>
+    <tr><td><code>loginBlocked</code></td><td>Your account needs another step before you can sign in…</td><td>A Shield action is pending but Shield's routes aren't registered, or Shield refused the login.</td></tr>
+    <tr><td><code>registerFailed</code></td><td>Your account couldn't be created.</td><td>Database error while creating the user.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="accounts">Accounts and matching<a class="anchor" href="#accounts" aria-label="Link to this section">#</a></h2>
+<p>After the token is verified, the package decides which Shield user this is. People are identified by <strong>issuer + subject</strong> (for Entra, the tenant-specific issuer + <code>oid</code>), stored as an <code>oidc</code> row in Shield's <code>auth_identities</code> table. Email addresses never identify anyone on their own.</p>
+<div class="flow" role="list" aria-label="How a person is matched to an account">
+  <div class="fstep" role="listitem"><div class="fq">Are they allowed in?<small><code>requiredClaims</code>, then <code>allowedDomains</code> (trusted email only)</small></div><div class="fa no">No: "Accounts from your organization can't sign in here."</div></div>
+  <div class="fstep" role="listitem"><div class="fq">Connecting a provider?<small>Started from <code>oidc_link_form()</code></small></div><div class="fa go">Yes: attach to the signed-in user, unless another user already has this identity.</div></div>
+  <div class="fstep" role="listitem"><div class="fq">Seen this identity before?</div><div class="fa yes">Yes: sign in as that user (refused if banned or, when Shield requires activation, not activated).</div></div>
+  <div class="fstep" role="listitem"><div class="fq">An account with the same email?</div><div class="fa go">Link it only if <em>both</em> addresses are verified: the provider's (<a href="#trusted-email">trusted</a>) and the local account's (by Shield), and <code>linkByEmail</code> isn't <code>never</code>. Otherwise: "An account with your email already exists."</div></div>
+  <div class="fstep" role="listitem"><div class="fq">Registration on?<small><code>register</code></small></div><div class="fa yes">Yes: create an active user, with the email only if it's trusted.</div></div>
+  <div class="fstep" role="listitem"><div class="fq">Otherwise</div><div class="fa no">"There's no account for you here yet."</div></div>
+</div>
+<p>New users get no usable password and join Shield's default group; Shield's <code>register</code> event fires as well as <code>oidcRegister</code>. If their email is trusted it's stored in Shield's email identity, so <code>$user-&gt;email</code> works. Without a trusted email they have no email identity and sign in only through the provider; note that Shield's <code>php spark shield:user</code> commands only list users with an email identity, so manage those users in code (<code>model(UserModel::class)</code>). Banned users are refused before anything about their account changes.</p>
+
+<h3 id="trusted-email">When an email is trusted</h3>
+<p>An email address from the provider is used (to link an existing account, to check <code>allowedDomains</code>, or as a new account's email) only when the provider vouches for it, in the way that provider documents:</p>
+<div class="tbl"><table>
+  <thead><tr><th>Provider</th><th>The email is trusted when</th></tr></thead>
+  <tbody>
+    <tr><td>Microsoft Entra ID</td><td>the <code>xms_edov</code> optional claim is true (the issuing tenant verified the domain). Entra's <code>email</code> can hold an address an administrator typed in, even in a single tenant.</td></tr>
+    <tr><td>Google</td><td>it's an <code>@gmail.com</code> address, or <code>email_verified</code> is true and the <code>hd</code> claim is present.</td></tr>
+    <tr><td>Everyone else</td><td><code>email_verified</code> is true.</td></tr>
+    <tr><td>Any provider</td><td>you set <code>linkByEmail =&gt; 'trusted'</code>: you vouch that its users can't set their own address.</td></tr>
+  </tbody>
+</table></div>
+<p>Linking also needs the <strong>local</strong> account's address to be verified, by Shield. That's true when registration is closed (<code>Config\Auth::$allowRegistration = false</code>: accounts were made by administrators), or when registration requires an email Activator and the account completed it. With Shield's default open registration and no activation, anyone could have registered someone else's address and waited for that person's first SSO sign-in, so email linking is off and people connect the provider from their account instead.</p>
+<div class="tbl"><table>
+  <thead><tr><th><code>linkByEmail</code></th><th>First sign-in, account with same email exists</th></tr></thead>
+  <tbody>
+    <tr><td><code>verified</code> (default)</td><td>Links when both addresses are verified as above.</td></tr>
+    <tr><td><code>trusted</code></td><td>Treats every email from this provider as verified (the local account still has to be).</td></tr>
+    <tr><td><code>never</code></td><td>Never links automatically; people connect from their account instead.</td></tr>
+  </tbody>
+</table></div>
+<div class="note bad">
+  <b class="t">Why this matters</b>
+  <p>If an unverified email could link accounts, anyone able to set their email at the provider (a tenant admin in multi-tenant Entra, an old personal Google account with a former employer's address, a provider with unverified sign-up) could sign in as someone else here just by using that person's address.</p>
+</div>
+
+<h3 id="linking">Connecting a provider</h3>
+<p>People with a password account can connect a provider from a page they reach while signed in, such as their account settings:</p>
+<div class="code"><span class="lang">php</span><pre><code class="php">&lt;?php helper('oidc') ?&gt;
+&lt;?= oidc_link_form('entra', '/account') ?&gt;</code></pre></div>
+<p>This works whatever their email at the provider is. Because connecting changes who can sign in to an account, it's protected more than a sign-in:</p>
+<ul>
+  <li>it's a POST with a per-session token, so another site can't trigger it with a link or hidden form;</li>
+  <li>the provider is asked for a fresh sign-in (<code>reauthParams</code>), so a provider session already open in the browser can't be linked silently: <code>prompt=login</code> and <code>max_age=0</code> by default, <code>prompt=login</code> for Entra, the account picker for Google (the only options each documents);</li>
+  <li><code>auth_time</code> is checked: it must be fresh, and a provider that should send it but doesn't is refused (Okta, Keycloak and Auth0 send it; for Entra, add the <code>auth_time</code> optional claim to get the check);</li>
+  <li>an identity already connected to another user can't be taken over.</li>
+</ul>
+
+<h3 id="shield-actions">Shield actions (2FA, activation)</h3>
+<p>SSO sign-ins follow Shield's own magic-link login. If Shield already has an action waiting for the user, such as an Email2FA code or an account activation, they're sent to Shield's action page to finish it; Shield then completes the login and fires its <code>login</code> event. Starting a <em>new</em> login action for SSO users is off by default, since the provider normally handles MFA; turn it on per provider with <code>'loginActions' =&gt; true</code>. Both need Shield's routes (<code>service('auth')-&gt;routes($routes)</code>, added by <code>shield:setup</code>).</p>
+
+<h2 id="groups">Roles and groups<a class="anchor" href="#groups" aria-label="Link to this section">#</a></h2>
+<p>Map the provider's roles or groups onto Shield groups, and Shield's permissions do the rest.</p>
+<div class="code"><span class="lang">php</span><pre><code class="php">'groupsClaim' => 'roles',
+'groupMap'    => ['App.Admin' => 'admin', 'App.Developer' => 'developer'],
+'syncGroups'  => true,</code></pre></div>
+<ul>
+  <li>Mapped groups are added on every sign-in. With <code>syncGroups</code>, mapped groups the person no longer has are removed.</li>
+  <li>Groups that aren't in <code>groupMap</code> are never touched, so groups you assign inside the app stay.</li>
+  <li>Nothing is removed when the claim is missing entirely: a dropped scope shouldn't demote everyone.</li>
+  <li>A list claim matches values exactly. A string claim is one value: <code>"Help Desk Admins"</code> doesn't match <code>Admins</code>.</li>
+  <li>The Shield groups must exist in <code>Config\AuthGroups</code>; unknown ones are logged and skipped.</li>
+</ul>
+<h3 id="groups-entra">Entra app roles</h3>
+<p>Use <strong>app roles</strong>: define them under <em>App registration &gt; App roles</em>, then assign people or groups under <em>Enterprise applications &gt; your app &gt; Users and groups</em>. They arrive in the <code>roles</code> claim, which is the default <code>groupsClaim</code> for Entra. Group claims also work, but Entra replaces them with a reference once someone is in more than about 200 groups; the package logs a warning and leaves groups alone when that happens.</p>
+<div class="note sec">
+  <b class="t">Multi-tenant Entra</b>
+  <p>Each organization assigns your app's roles to its own people, so any of them could give themselves <code>App.Admin</code>. Roles and groups from multi-tenant Entra are ignored unless the token's tenant is listed in <code>groupTenants</code>:</p>
+  <div class="code"><span class="lang">php</span><pre><code class="php">'tenant'       => 'organizations',
+'groupMap'     => ['App.Admin' => 'admin'],
+'groupTenants' => ['11111111-2222-3333-4444-555555555555'],   // your own tenant</code></pre></div>
+</div>
+
+<h2 id="logout">Logging out<a class="anchor" href="#logout" aria-label="Link to this section">#</a></h2>
+<p>Shield's <code>/logout</code> signs people out of your app only; their provider session stays, so the next "Sign in with …" may not ask for a password. <code>/oidc/logout</code> signs out of your app and, with <code>logoutAtProvider</code>, also ends the provider session (OpenID Connect RP-Initiated Logout). The provider then sends people to <code>$logoutRedirect</code>, which you must register with it (<code>oidc:check</code> prints the address): Entra under <em>Authentication</em> as a redirect URI; Okta under <em>Sign-out redirect URIs</em>; Keycloak under <em>Valid post logout redirect URIs</em>; Auth0 under <em>Allowed Logout URLs</em>. Google has no provider logout. The package sends <code>id_token_hint</code> (required by Okta), except to Entra, which documents <code>logout_hint</code> instead (from the <code>login_hint</code> optional claim).</p>
+<div class="code"><span class="lang">php</span><pre><code class="php">&lt;a href="&lt;?= site_url('oidc/logout') ?&gt;"&gt;Sign out&lt;/a&gt;</code></pre></div>
+
+<h2 id="customizing">Customizing<a class="anchor" href="#customizing" aria-label="Link to this section">#</a></h2>
+<h3 id="cust-resolver">How users are created</h3>
+<p>Extend <code>UserResolver</code> and point <code>$userResolver</code> at your class. Every step is a protected method:</p>
+<dl class="kv">
+  <dt>newUserData()</dt><dd>Fields for a new user. Add your own columns here.</dd>
+  <dt>trustedEmail()</dt><dd>Decides whether the provider's email can be trusted (per provider).</dd>
+  <dt>localEmailVerified()</dt><dd>Decides whether Shield vouches for an existing account's email.</dd>
+  <dt>checkRequiredClaims()</dt><dd>The <code>requiredClaims</code> rule.</dd>
+  <dt>checkDomain()</dt><dd>The <code>allowedDomains</code> rule.</dd>
+  <dt>syncGroups()</dt><dd>Group mapping and sync.</dd>
+  <dt>identityExtra()</dt><dd>What's kept in the identity's <code>extra</code> column.</dd>
+</dl>
+<div class="code"><span class="lang">php</span><pre><code class="php">namespace App\Libraries;
+
+use DaemonLabs\ShieldOidc\Provider;
+use DaemonLabs\ShieldOidc\UserResolver;
+
+class MyUserResolver extends UserResolver
+{
+    protected function newUserData(Provider $provider, array $claims, ?string $trustedEmail): array
+    {
+        return parent::newUserData($provider, $claims, $trustedEmail) + [
+            'display_name' => is_string($claims['name'] ?? null) ? $claims['name'] : null,
+        ];
+    }
+}
+
+// app/Config/ShieldOidc.php
+public string $userResolver = \App\Libraries\MyUserResolver::class;</code></pre></div>
+<p>Add any new column to Shield's <code>UserModel::$allowedFields</code> (Shield's docs explain extending the user model).</p>
+<h3 id="cust-http">HTTP</h3>
+<p>To route provider calls through a proxy or add logging, implement <code>DaemonLabs\ShieldOidc\Http\HttpClient</code> (two methods, <code>get()</code> and <code>post()</code>, returning <code>['status' =&gt; int, 'body' =&gt; string]</code>) and set <code>$httpClient</code>. The class is constructed with one argument, <code>$httpTimeout</code> in seconds. Keep TLS verification on and don't follow redirects.</p>
+<h3 id="cust-ui">Buttons and messages</h3>
+<p>Style <code>.oidc-buttons</code> and <code>.oidc-button</code>, or build your own with <code>oidc_login_url()</code>. Override the view by creating <code>app/Views/…</code> and rendering it yourself, and translate messages with <code>app/Language/&lt;locale&gt;/Oidc.php</code>.</p>
+
+<h2 id="security">What's verified<a class="anchor" href="#security" aria-label="Link to this section">#</a></h2>
+<p>Every ID token goes through these checks, in this order, before any claim is used (OpenID Connect Core 1.0, section 3.1.3.7):</p>
+<ol class="steps">
+  <li><strong>Format.</strong> Compact JWS, strict base64url, a JSON object payload.</li>
+  <li><strong>Algorithm.</strong> One of RS256/384/512 or ES256/384/512, allowed for this provider, and advertised by it; never widened. <code>none</code> and HMAC (HS256…) are always refused, as are <code>crit</code> headers.</li>
+  <li><strong>Signature.</strong> Against the provider's published keys only; keys in the token header (<code>jwk</code>, <code>jku</code>, <code>x5u</code>, <code>x5c</code>) are never used. The key must match the token's <code>kid</code>, key type, curve, <code>use</code>/<code>key_ops</code> and any issuer it's scoped to. RSA keys under 2048 bits or with unsafe exponents are refused.</li>
+  <li><strong>Issuer.</strong> Exactly the provider's issuer; for multi-tenant Entra, the token's own tenant, matching its <code>tid</code> and your tenant rules.</li>
+  <li><strong>Audience.</strong> Must include your client id; any other audience must be in <code>trustedAudiences</code>. <code>azp</code>, when present, must be your client id (errata set 2 of the spec).</li>
+  <li><strong>Time.</strong> <code>exp</code>, <code>iat</code> and <code>nbf</code>, numeric and finite, within <code>$clockSkew</code>.</li>
+  <li><strong>Nonce.</strong> Must equal the one sent with this sign-in.</li>
+  <li><strong>Subject.</strong> Present, at most 255 characters (the spec's limit), and printable ASCII (stricter than the spec, which allows any ASCII; it keeps control characters out of logs and storage).</li>
+  <li><strong>Authentication time.</strong> When a fresh sign-in was asked for (<code>max_age</code>, or connecting an account), <code>auth_time</code> must be recent enough, and present where the provider is obliged to send it.</li>
+</ol>
+<p>Provider metadata is checked too: the discovery document's issuer must match your configuration, every endpoint must be https, and signing keys are refetched only when a new key id appears, at most every 5 minutes (Microsoft's guidance). If the provider is briefly unreachable after the cache expires, the last good discovery document and keys (kept for a week) are used. The redirect's <code>iss</code> (RFC 9207) is checked before anything else in it, error responses included, and the access token is only sent to userinfo when its type is Bearer.</p>
+
+<h2 id="threats">Attacks and defences<a class="anchor" href="#threats" aria-label="Link to this section">#</a></h2>
+<div class="tbl"><table>
+  <thead><tr><th>Attack</th><th>Defence</th></tr></thead>
+  <tbody>
+    <tr><td>Forged or tampered ID token</td><td>Signature verified against the provider's keys; weak keys and <code>alg: none</code>/HMAC refused.</td></tr>
+    <tr><td>Stolen authorization code</td><td>PKCE: the code is useless without the verifier in the original session.</td></tr>
+    <tr><td>Login CSRF (signing a victim into the attacker's account)</td><td>State bound to the browser session that started the sign-in, single use.</td></tr>
+    <tr><td>Token replay</td><td>Nonce per sign-in; expiry checked.</td></tr>
+    <tr><td>Mix-up between providers</td><td>State bound to one provider, per-provider callback URLs, RFC 9207 <code>iss</code> checks.</td></tr>
+    <tr><td>Account takeover by email (nOAuth)</td><td>Matching on issuer + subject; email used only when <a href="#trusted-email">trusted</a>.</td></tr>
+    <tr><td>Pre-registration squatting</td><td>Untrusted emails never stored on new accounts; email linking only into accounts whose address Shield verified (closed registration, or activation).</td></tr>
+    <tr><td>Stale or third-party email (Google)</td><td>Google emails count only for <code>@gmail.com</code> or with <code>hd</code>, as Google advises.</td></tr>
+    <tr><td>Another tenant granting itself admin</td><td>Multi-tenant Entra roles ignored outside <code>groupTenants</code>.</td></tr>
+    <tr><td>Forced account linking</td><td>POST with a session token, fresh provider sign-in, <code>auth_time</code> checked.</td></tr>
+    <tr><td>Open redirect via <code>return</code></td><td>Local paths only, resolved against <code>app.baseURL</code>.</td></tr>
+    <tr><td>Code leaking via Referer</td><td>The callback answers with <code>Referrer-Policy: no-referrer</code> (RFC 9700).</td></tr>
+    <tr><td>Session fixation</td><td>Shield regenerates the session on login.</td></tr>
+    <tr><td>Log injection, information leaks</td><td>Provider text flattened and capped in logs; people see fixed messages only.</td></tr>
+    <tr><td>Configuration typos</td><td>Unknown or mistyped settings are errors, not silently dropped restrictions.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="hardening">Hardening your app<a class="anchor" href="#hardening" aria-label="Link to this section">#</a></h2>
+<ul>
+  <li><strong>Prefer a single Entra tenant</strong>, or <code>allowedTenants</code> / <code>requiredClaims</code> to limit who can sign in. Run <code>oidc:check</code> and read its warnings.</li>
+  <li><strong>Turn off other ways in</strong> if SSO should be the only one. Users with an email can still use Shield's magic-link login (<code>Config\Auth::$allowMagicLinkLogins</code>, on by default), which is also Shield's forgot-password flow, and doesn't go through your provider's MFA or account removal.</li>
+  <li><strong>Mind session lifetime.</strong> Existing sessions and remember-me tokens outlive removal at the provider until they expire. Keep them short for sensitive apps.</li>
+  <li><strong>Keep secrets in <code>.env</code></strong>, never in committed config. Rotate client secrets before they expire (Entra secrets expire after at most two years).</li>
+  <li><strong>Use HTTPS everywhere</strong> and set <code>app.baseURL</code> to your https address.</li>
+  <li><strong>Watch the log</strong> for <code>Shield OIDC</code> lines and the <code>oidcFailed</code> event.</li>
+</ul>
+
+<h2 id="troubleshooting">Troubleshooting<a class="anchor" href="#troubleshooting" aria-label="Link to this section">#</a></h2>
+<p>Start with <code>php spark oidc:check</code>, then look in <code>writable/logs</code> for lines starting <code>Shield OIDC [provider]</code>.</p>
+<dl class="kv">
+  <dt>Button goes back to /login</dt><dd>Shield's <code>session</code> filter is blocking <code>/oidc/*</code>; see <a href="#install">Installation</a>.</dd>
+  <dt>Redirect URI mismatch</dt><dd>Register exactly what <code>oidc:check</code> prints, and set <code>app.baseURL</code> to your https address (and <code>app.indexPage</code> to empty if you use pretty URLs).</dd>
+  <dt>Unknown setting "…"</dt><dd>A typo in a provider setting; compare with <a href="#options">Provider options</a>.</dd>
+  <dt>Issuer does not match</dt><dd>The <code>issuer</code> must be the provider's, including any path (e.g. <code>/realms/x</code>, <code>/oauth2/default</code>); a trailing slash is tolerated. For Entra, check <code>tenant</code> and, in national clouds, <code>authority</code>.</dd>
+  <dt>No iss parameter (Keycloak)</dt><dd>Turn off the client's <em>Exclude Issuer From Authentication Response</em>.</dd>
+  <dt>HMAC-signed token</dt><dd>Switch the provider to RS256 (Auth0: Advanced Settings &gt; OAuth).</dd>
+  <dt>Untrusted audience</dt><dd>The provider adds audiences to ID tokens; list them in <code>trustedAudiences</code> if that's intended.</dd>
+  <dt>No auth_time</dt><dd>When connecting an account, the provider didn't report the sign-in time. Set <code>requireAuthTime =&gt; false</code> for providers that never send it.</dd>
+  <dt>"Cancelled, or not allowed"</dt><dd>Usually the person isn't assigned to the app at the provider (Okta, Entra with assignment required).</dd>
+  <dt>Token issuer not expected (Entra)</dt><dd>The account is from a tenant your <code>tenant</code>/<code>allowedTenants</code> doesn't allow, or a personal account on <code>organizations</code>.</dd>
+  <dt>No usable ID token algorithm</dt><dd>Your <code>algorithms</code> list and what the provider offers don't overlap.</dd>
+  <dt>"Account already exists"</dt><dd>Sign in with the password and connect the provider, or see <a href="#trusted-email">trusted emails</a>.</dd>
+  <dt>Groups not applied</dt><dd>Check the claim name, that the Shield groups exist, and for multi-tenant Entra, <code>groupTenants</code>.</dd>
+  <dt>Token "issued in the future"</dt><dd>The server clock is off; enable NTP, or raise <code>$clockSkew</code> slightly.</dd>
+  <dt>Provider unreachable</dt><dd>Outbound HTTPS from the server is blocked, or DNS fails; try <code>curl</code> to the issuer from the server.</dd>
+</dl>
+
+<h2 id="limits">Limitations<a class="anchor" href="#limits" aria-label="Link to this section">#</a></h2>
+<ul>
+  <li>No SAML yet; OpenID Connect only.</li>
+  <li>PS256 and EdDSA signatures, encrypted ID tokens, and front- and back-channel logout aren't supported.</li>
+  <li>Client authentication is by client secret only; certificate credentials (<code>private_key_jwt</code>), which Microsoft prefers for production, are planned.</li>
+  <li>Entra apps with custom signing keys (claims mapping) aren't supported.</li>
+  <li>Shield's login actions (e.g. Email2FA) aren't started for SSO sign-ins unless <code>loginActions</code> is on: MFA normally belongs to the provider.</li>
+  <li>Entra (by default) and Google don't send <code>auth_time</code>, so for them the fresh-sign-in check when connecting an account relies on their prompt. For Entra, add the <code>auth_time</code> optional claim.</li>
+  <li>Users without an email identity don't appear in Shield's <code>shield:user</code> commands.</li>
+</ul>
+
+<h2 id="contributing">Testing and contributing<a class="anchor" href="#contributing" aria-label="Link to this section">#</a></h2>
+<div class="code"><span class="lang">bash</span><pre><code class="bash">composer install
+composer test</code></pre></div>
+<p>The suite runs a fake identity provider with real RSA and EC keys and covers token forgeries, weak and malformed keys, key rotation, Entra tenant rules, account takeover attempts, group mapping, and the full browser round trip through Shield. Continuous integration runs it on PHP 8.1 to 8.4, and on the oldest supported CodeIgniter and Shield versions.</p>
+<p>Report security problems privately through GitHub's <em>Report a vulnerability</em> button on the repository's Security tab, not in public issues.</p>
+
+<footer>
+  <p>Shield OIDC is MIT-licensed open source by <a href="https://www.daemonlabs.app">Daemon Labs</a>. CodeIgniter and Shield are projects of the CodeIgniter Foundation; Microsoft Entra, Google Workspace, Okta, Keycloak and Auth0 are trademarks of their owners.</p>
+</footer>
+</div>
+</main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var root = document.documentElement;
+
+  // Theme toggle (remembered per browser when storage is available)
+  document.getElementById('theme').addEventListener('click', function () {
+    var dark = root.getAttribute('data-theme') === 'dark' ||
+      (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var next = dark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('shield-oidc-theme', next); } catch (e) {}
+  });
+
+  // Mobile menu
+  var menu = document.getElementById('menu');
+  function setNav(open) { document.body.classList.toggle('nav-open', open); menu.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+  menu.addEventListener('click', function () { setNav(!document.body.classList.contains('nav-open')); });
+  document.querySelectorAll('.side a').forEach(function (a) { a.addEventListener('click', function () { setNav(false); }); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setNav(false); });
+
+  // Filter the contents; "/" focuses the box
+  var filter = document.getElementById('filter'), links = document.querySelectorAll('.side li'), none = document.getElementById('nomatch');
+  filter.addEventListener('input', function () {
+    var q = filter.value.trim().toLowerCase(), shown = 0;
+    links.forEach(function (li) { var hit = !q || li.textContent.toLowerCase().indexOf(q) !== -1; li.style.display = hit ? '' : 'none'; if (hit) shown++; });
+    document.querySelectorAll('.side h4').forEach(function (h) {
+      var ul = h.nextElementSibling, any = ul && Array.prototype.some.call(ul.children, function (li) { return li.style.display !== 'none'; });
+      h.style.display = any ? '' : 'none';
+    });
+    none.style.display = shown ? 'none' : 'block';
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '/' && document.activeElement !== filter && !/input|textarea/i.test(document.activeElement.tagName)) { e.preventDefault(); filter.focus(); }
+  });
+
+  // Copy buttons
+  document.querySelectorAll('.code').forEach(function (box) {
+    var btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'copy'; btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = box.querySelector('code').textContent;
+      var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1400); };
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(done, function () {}); }
+      else { var t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (e) {} t.remove(); }
+    });
+    box.appendChild(btn);
+  });
+
+  // Light syntax highlighting for PHP and shell snippets
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function highlight(code, lang) {
+    var rules = lang === 'php'
+      ? [[/\/\/[^\n]*|#[^\n[]*|\/\*[\s\S]*?\*\//, 'c'], [/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"/, 's'], [/\$[A-Za-z_]\w*/, 'v'],
+         [/\b(?:namespace|use|class|extends|public|protected|private|function|return|static|array|string|bool|int|new|true|false|null|parent|fn|if|else)\b/, 'k'], [/\b[a-z_]\w*(?=\()/, 'f']]
+      : [[/#[^\n]*/, 'c'], [/"(?:\\.|[^"\\])*"|'[^']*'/, 's'], [/\b(?:composer|php|spark|curl)\b/, 'k']];
+    var out = '', rest = code;
+    while (rest.length) {
+      var best = null, bi = -1, bc = '';
+      rules.forEach(function (r) { var m = r[0].exec(rest); if (m && (bi === -1 || m.index < bi)) { best = m; bi = m.index; bc = r[1]; } });
+      if (!best || best[0] === '') { out += esc(rest); break; }
+      out += esc(rest.slice(0, bi)) + '<span class="tk-' + bc + '">' + esc(best[0]) + '</span>';
+      rest = rest.slice(bi + best[0].length);
+    }
+    return out;
+  }
+  document.querySelectorAll('pre code.php, pre code.bash').forEach(function (el) {
+    el.innerHTML = highlight(el.textContent, el.classList.contains('php') ? 'php' : 'bash');
+  });
+
+  // Highlight the current section in the contents
+  var navLinks = {};
+  document.querySelectorAll('.side a[href^="#"]').forEach(function (a) { navLinks[a.getAttribute('href').slice(1)] = a; });
+  var targets = Array.prototype.filter.call(document.querySelectorAll('h2[id], h3[id], main[id]'), function (h) { return navLinks[h.id]; });
+  function onScroll() {
+    var y = window.scrollY + 120, current = targets[0];
+    targets.forEach(function (h) { if (h.getBoundingClientRect().top + window.scrollY <= y) current = h; });
+    Object.keys(navLinks).forEach(function (id) { navLinks[id].classList.toggle('on', current && id === current.id); });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+</body>
+</html>
